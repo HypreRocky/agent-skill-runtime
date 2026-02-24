@@ -11,14 +11,10 @@ def exec_run_entrypoint(
     plan: Dict[str, Any],
     working_input: Dict[str, Any],
 ) -> Dict[str, Any]:
-    from skill_runtime import (
-        MAX_OUTPUT_BYTES,
-        STDERR_LIMIT,
-        SkillError,
-        _build_subprocess_env,
-        _pick_timeout,
-        _resolve_script_path,
-    )
+    from utils.constants import MAX_OUTPUT_BYTES, STDERR_LIMIT
+    from utils.errors import SkillError
+    from utils.runtime_utils import _build_subprocess_env, _pick_timeout
+    from utils.skill_files import _resolve_script_path
 
     steps = plan.get("steps", [])
     if not isinstance(steps, list) or not steps:
@@ -44,9 +40,17 @@ def exec_run_entrypoint(
             "args": step.get("args", {}),
             "prev": prev_output,
         }
+        suffix = script_path.suffix.lower()
+        if suffix == ".py":
+            cmd = [sys.executable, str(script_path)]
+        elif suffix in {".sh", ".bash"}:
+            cmd = ["bash", str(script_path)]
+        else:
+            raise SkillError(f"unsupported script type: {script}")
+
         try:
             proc = subprocess.run(
-                [sys.executable, str(script_path)],
+                cmd,
                 input=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,

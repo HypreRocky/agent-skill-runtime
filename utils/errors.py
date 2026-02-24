@@ -1,0 +1,2 @@
+class SkillError(Exception):
+    pass

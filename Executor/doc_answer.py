@@ -10,17 +10,10 @@ def exec_doc_answer(
     plan: Dict[str, Any],
     working_input: Dict[str, Any],
 ) -> Dict[str, Any]:
-    from skill_runtime import (
-        SkillError,
-        _build_system_prompt,
-        _build_user_prompt,
-        _chat_with_fallback,
-        _chunk_text,
-        _default_documents,
-        _is_within,
-        _rank_chunks,
-        _read_document_text,
-    )
+    from utils.errors import SkillError
+    from utils.llm_utils import _build_system_prompt, _build_user_prompt, _chat_with_fallback
+    from utils.skill_files import _default_documents, _is_within, _read_document_text
+    from utils.text_utils import _chunk_text, _rank_chunks
 
     query = str(plan.get("query", "") or working_input.get("query", "")).strip()
     top_k = int(plan.get("top_k", 4) or 4)
