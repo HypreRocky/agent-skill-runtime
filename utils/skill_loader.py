@@ -1,58 +1,35 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, Tuple
+from typing import Dict
+
+from utils.skill_io import read_skill_markdown_frontmatter
 
 
 def load_skills(skills_root_path: str | Path) -> Dict[str, Dict[str, str]]:
-    skills_root = Path(skills_root_path)
+    skills_root = Path(skills_root_path).resolve()
     results: Dict[str, Dict[str, str]] = {}
     if not skills_root.exists():
         return results
 
-    for child in skills_root.iterdir():
-        if not child.is_dir():
+    for skill_md in sorted(skills_root.rglob("SKILL.md")):
+        relative_parts = skill_md.relative_to(skills_root).parts
+        if any(part.startswith(".") for part in relative_parts):
             continue
-        skill_md = child / "SKILL.md"
-        if not skill_md.exists():
+        if not skill_md.parent.is_dir():
             continue
-        meta = _read_frontmatter(skill_md)
+        try:
+            meta, _ = read_skill_markdown_frontmatter(skill_md)
+        except Exception:
+            continue
         name = str(meta.get("name", "")).strip()
         description = str(meta.get("description", "")).strip()
         if not name:
             continue
-        results[name] = {"name": name, "description": description}
+        results[name] = {
+            "name": name,
+            "description": description,
+            "path": str(skill_md),
+        }
 
     return results
-
-
-def _read_frontmatter(path: Path) -> Dict[str, str]:
-    text = path.read_text(encoding="utf-8")
-    meta, _body = _parse_frontmatter(text)
-    return meta
-
-
-def _parse_frontmatter(text: str) -> Tuple[Dict[str, str], str]:
-    lines = text.splitlines()
-    if len(lines) < 3 or lines[0].strip() != "---":
-        return {}, text
-    fm_lines = []
-    end_idx = None
-    for i in range(1, len(lines)):
-        if lines[i].strip() == "---":
-            end_idx = i
-            break
-        fm_lines.append(lines[i])
-    if end_idx is None:
-        return {}, text
-    raw = "\n".join(fm_lines)
-    meta: Dict[str, str] = {}
-    for line in raw.splitlines():
-        if not line.strip() or line.lstrip().startswith("#"):
-            continue
-        if ":" not in line:
-            continue
-        key, value = line.split(":", 1)
-        meta[key.strip()] = value.strip()
-    body = "\n".join(lines[end_idx + 1 :])
-    return meta, body

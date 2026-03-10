@@ -8,17 +8,42 @@ from utils.errors import SkillError
 
 def _list_skill_files(skill_dir: Path) -> Dict[str, List[str]]:
     scripts: List[str] = []
+    documents: List[str] = []
+    references: List[str] = []
+
     scripts_dir = skill_dir / "scripts"
-    if not scripts_dir.exists():
-        return {"scripts": []}
-    for path in scripts_dir.rglob("*"):
-        if not path.is_file():
-            continue
-        if path.suffix.lower() not in {".py", ".sh", ".bash"}:
-            continue
-        rel = path.relative_to(skill_dir).as_posix()
-        scripts.append(rel)
-    return {"scripts": sorted(scripts)}
+    if scripts_dir.exists():
+        for path in scripts_dir.rglob("*"):
+            if not path.is_file():
+                continue
+            if path.suffix.lower() not in {".py", ".sh", ".bash"}:
+                continue
+            rel = path.relative_to(skill_dir).as_posix()
+            scripts.append(rel)
+
+    docs_dir = skill_dir / "docs"
+    if docs_dir.exists():
+        for path in docs_dir.rglob("*"):
+            if not path.is_file():
+                continue
+            if path.suffix.lower() not in {".md", ".txt", ".pdf", ".docx"}:
+                continue
+            documents.append(path.relative_to(skill_dir).as_posix())
+
+    refs_dir = skill_dir / "references"
+    if refs_dir.exists():
+        for path in refs_dir.rglob("*"):
+            if not path.is_file():
+                continue
+            if path.suffix.lower() not in {".md", ".txt", ".json", ".yaml", ".yml"}:
+                continue
+            references.append(path.relative_to(skill_dir).as_posix())
+
+    return {
+        "scripts": sorted(scripts),
+        "documents": sorted(documents),
+        "references": sorted(references),
+    }
 
 
 def _load_references(skill_dir: Path, references: Any) -> List[Dict[str, Any]]:

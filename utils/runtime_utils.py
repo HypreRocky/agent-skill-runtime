@@ -7,9 +7,11 @@ from utils.constants import DEFAULT_TIMEOUT_S
 from utils.errors import SkillError
 
 
-def _build_subprocess_env() -> Dict[str, str]:
+def _build_subprocess_env(extra_env: Optional[Dict[str, str]] = None) -> Dict[str, str]:
     env = dict(os.environ)
     env["PYTHONIOENCODING"] = "utf-8"
+    if extra_env:
+        env.update({key: value for key, value in extra_env.items() if value is not None})
     return env
 
 
